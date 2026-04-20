@@ -1,5 +1,4 @@
-data/
-artifacts/
+data/mental-state.csv
 template/
 __pycache__/
 .ipynb_checkpoints/
@@ -7,4 +6,6 @@ __pycache__/
 .DS_Store
 .venv/
 .env
-CHALLENGE.md
+.claude/CHALLENGE.md
+artifacts/sample_input.csv
+
