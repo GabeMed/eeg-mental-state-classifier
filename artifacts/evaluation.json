@@ -1,0 +1,128 @@
+{
+  "logreg": {
+    "test_macro_f1": 0.9528,
+    "test_weighted_f1": 0.9512,
+    "confusion_matrix": [
+      [
+        158,
+        5,
+        1
+      ],
+      [
+        14,
+        150,
+        2
+      ],
+      [
+        0,
+        1,
+        142
+      ]
+    ]
+  },
+  "xgb": {
+    "test_macro_f1": 0.9704,
+    "test_weighted_f1": 0.9704,
+    "confusion_matrix": [
+      [
+        158,
+        4,
+        2
+      ],
+      [
+        1,
+        159,
+        6
+      ],
+      [
+        0,
+        1,
+        142
+      ]
+    ]
+  },
+  "family_importance": {
+    "sum_by_family": {
+      "freq": 0.45945000648498535,
+      "eigenval": 0.11124999821186066,
+      "topFreq": 0.07598000019788742,
+      "min": 0.06752000004053116,
+      "max": 0.06311000138521194,
+      "logcovM": 0.05663000047206879,
+      "mean": 0.05510000139474869,
+      "covM": 0.03012000024318695,
+      "mean_d": 0.027890000492334366,
+      "std": 0.01744000054895878,
+      "kurt": 0.013609999790787697,
+      "mean_q": 0.013059999793767929,
+      "skew": 0.008849999867379665
+    },
+    "top_per_family": {
+      "covM": [
+        "lag1_covM_1_1",
+        "lag1_covM_0_3",
+        "lag1_covM_0_1"
+      ],
+      "eigenval": [
+        "lag1_eigenval_0",
+        "eigenval_0",
+        "eigenval_1"
+      ],
+      "freq": [
+        "freq_020_3",
+        "lag1_freq_010_3",
+        "freq_081_3"
+      ],
+      "kurt": [
+        "lag1_kurt_0",
+        "kurt_0",
+        "lag1_kurt_1"
+      ],
+      "logcovM": [
+        "logcovM_0_0",
+        "lag1_logcovM_2_2",
+        "lag1_logcovM_1_1"
+      ],
+      "max": [
+        "max_q2_3",
+        "max_q2_2",
+        "lag1_max_q1_0"
+      ],
+      "mean": [
+        "mean_3",
+        "lag1_mean_3",
+        "mean_0"
+      ],
+      "mean_d": [
+        "mean_d_q1q3_1",
+        "lag1_mean_d_q1q4_2",
+        "lag1_mean_d_q2q4_0"
+      ],
+      "mean_q": [
+        "mean_q3_3",
+        "lag1_mean_q1_2",
+        "lag1_mean_q2_2"
+      ],
+      "min": [
+        "min_d_q2q3_3",
+        "min_d_q1q2_2",
+        "min_d_q2q3_0"
+      ],
+      "skew": [
+        "lag1_skew_3",
+        "skew_0",
+        "skew_1"
+      ],
+      "std": [
+        "lag1_std_0",
+        "std_0",
+        "lag1_std_d_h2h1_1"
+      ],
+      "topFreq": [
+        "lag1_topFreq_3_3",
+        "topFreq_1_3",
+        "topFreq_9_2"
+      ]
+    }
+  }
+}
