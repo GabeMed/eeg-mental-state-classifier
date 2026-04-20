@@ -1,14 +1,14 @@
-# PLANO.md — Desafio Synapsee
+# PLANO.md — EEG Mental State Classifier
 
 **Autor:** Gabriel Medeiros
 **Data:** 19/04/2026
-**Prazo de entrega:** 20/04/2026, 11h (apresentação ao vivo)
+**Time-box auto-imposto:** ~4h efetivas
 
 ---
 
 ## 1. Leitura do problema
 
-O desafio é construir um sistema de classificação de estados mentais (relaxado, neutro, concentrado) a partir de sinais de EEG, e derivar um score contínuo de engajamento. O dataset `birdy654/eeg-brainwave-dataset-mental-state` contém 2479 janelas temporais já convertidas em 988 features estatísticas (domínios temporal, espectral, covariância entre canais), coletadas com headband Muse (4 eletrodos: TP9, AF7, AF8, TP10) a 200 Hz.
+O objetivo é construir um sistema de classificação de estados mentais (relaxado, neutro, concentrado) a partir de sinais de EEG, e derivar um score contínuo de engajamento. O dataset `birdy654/eeg-brainwave-dataset-mental-state` contém 2479 janelas temporais já convertidas em 988 features estatísticas (domínios temporal, espectral, covariância entre canais), coletadas com headband Muse (4 eletrodos: TP9, AF7, AF8, TP10) a 200 Hz.
 
 As classes estão balanceadas (33% cada), então o problema não é desbalanceamento — é **generalização em alta dimensão com poucas amostras** (≈2.5 linhas por feature) e **ruído característico de EEG**. O trabalho real está em (1) validar honestamente, (2) justificar escolhas de feature e modelo, e (3) entregar um score de engajamento coerente com a neurociência do problema.
 
@@ -31,7 +31,7 @@ As classes estão balanceadas (33% cada), então o problema não é desbalanceam
 
 ## 3. Etapas e orçamento de tempo
 
-Execução compactada em sprint noturno (~4h efetivas). Cada etapa tem um teto; se estourar, corto escopo e sigo.
+Execução compactada em ~4h efetivas (time-box auto-imposto). Cada etapa tem um teto; se estourar, corto escopo e sigo.
 
 | Ordem | Etapa | Tempo | Saída |
 |-------|-------|-------|-------|
@@ -44,7 +44,7 @@ Execução compactada em sprint noturno (~4h efetivas). Cada etapa tem um teto; 
 | 7 | Relatório final + README | 25 min | Markdown honesto do que funcionou, falhou, e faria diferente |
 | — | Buffer / polimento / git | 20 min | Commit final, push, sanity check |
 
-**Total planejado:** ~4h. Começo agora e paro para dormir às ~4h30.
+**Total planejado:** ~4h efetivas.
 
 ---
 
@@ -66,9 +66,9 @@ Defino abaixo o que considero um resultado defensável — não o ideal, mas o m
 Registro aqui o que sei que vai limitar os resultados, para não parecer que descobri depois:
 
 - **Features pré-extraídas, sem sinal bruto.** Não tenho acesso às séries temporais originais, então não posso aplicar arquiteturas EEG-específicas (EEGNet, CNNs 1D). Documentado como trabalho futuro.
-- **CSV não inclui IDs de sujeito.** Validação cruzada é estratificada sobre janelas, não sobre sujeitos. Isso é suficiente para o escopo do desafio, mas um deploy real em um novo usuário exigiria protocolo subject-independent (LOSO) — menciono isso no relatório final como próximo passo.
+- **CSV não inclui IDs de sujeito.** Validação cruzada é estratificada sobre janelas, não sobre sujeitos. Isso é suficiente para o escopo deste projeto, mas um deploy real em um novo usuário exigiria protocolo subject-independent (LOSO) — menciono isso no relatório final como próximo passo.
 - **Hardware consumer-grade (Muse, eletrodos secos).** Razão sinal/ruído inferior à de EEG clínico. Teto de accuracy intrinsecamente limitado.
-- **Sprint noturno de 4h.** Não haverá tuning exaustivo de hiperparâmetros nem ablação extensa. Defaults sensatos + uma rodada de regularização.
+- **Time-box de ~4h.** Não haverá tuning exaustivo de hiperparâmetros nem ablação extensa. Defaults sensatos + uma rodada de regularização.
 
 ---
 

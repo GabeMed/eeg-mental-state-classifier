@@ -8,7 +8,7 @@ Documento curto para resolver as 4 zonas cinzentas antes de codar.
 
 **Decisão:** app aceita CSV no mesmo formato do dataset de treino (988 colunas de features + coluna `Label` opcional).
 
-**Razão:** 4h não dá para empacotar extração de sinal bruto → features. Documentar claramente na UI e no README: "esta é uma plataforma de inferência sobre features já extraídas; extração a partir de sinal bruto é trabalho futuro."
+**Razão:** dentro do time-box não dá para empacotar extração de sinal bruto → features. Documentar claramente na UI e no README: "esta é uma plataforma de inferência sobre features já extraídas; extração a partir de sinal bruto é trabalho futuro."
 
 **Mitigação do risco:** incluir no repo um `sample_input.csv` (algumas linhas do dataset de teste) para o avaliador conseguir testar em 10s.
 
@@ -28,7 +28,7 @@ Documento curto para resolver as 4 zonas cinzentas antes de codar.
 
 **Decisão adotada:** **score = P(concentrating) da regressão logística, normalizado para 0–100.**
 
-- **Por quê B e não BATR agora:** 4h não comporta validar os mapeamentos de banda acima e ainda garantir um BATR interpretável. O model-based proxy é coerente por construção com o ground-truth do próprio dataset.
+- **Por quê B e não BATR agora:** o time-box não comporta validar os mapeamentos de banda acima e ainda garantir um BATR interpretável. O model-based proxy é coerente por construção com o ground-truth do próprio dataset.
 - **O que vira trabalho futuro (documentado no REPORT):** implementar BATR clássico usando o mapeamento de bandas derivado do axioma de frequência acima. Adicionar como painel no app.
 - **Validação do proxy:** correlação entre score e classe `concentrating` no conjunto de teste, boxplot por classe.
 
