@@ -6,10 +6,10 @@ Projeto pessoal time-boxed sobre `birdy654/eeg-brainwave-dataset-mental-state`. 
 
 | Modelo | CV macro-F1 (5-fold, train) | Test macro-F1 (473 linhas trancadas) |
 |---|---|---|
-| LogReg L2 multinomial | 0.9514 ± 0.0075 | **0.9528** |
-| XGBoost (n=300, depth=6) | 0.9701 ± 0.0085 | **0.9704** |
+| LogReg L2 multinomial | 0.9534 ± 0.0068 | **0.9528** |
+| XGBoost (n=300, depth=6) | 0.9690 ± 0.0070 | **0.9704** |
 
-Gap CV→test: +0.0014 (LogReg), +0.0003 (XGB) — **sem discrepância suspeita** entre CV e holdout. O conjunto de teste jamais foi visto pelo scaler nem pelos modelos até `scripts/evaluate.py`.
+CV é honesta: o scaler vive **dentro** da `sklearn.Pipeline` de validação cruzada — `RobustScaler` + clip ±10 são re-ajustados em cada fold, então o fold de validação nunca toca estatísticas treinadas sobre ele mesmo. Gap CV→test: -0.0006 (LogReg), +0.0014 (XGB) — dentro do ruído, **sem discrepância suspeita** entre CV e holdout. O conjunto de teste jamais foi visto pelo scaler nem pelos modelos até `scripts/evaluate.py`.
 
 Score de engajamento (0–100) médio por classe verdadeira no teste: relaxed=3.0, neutral=46.5, concentrating=99.5. Spearman `r(score, label_ordinal) = 0.9269`.
 
@@ -20,7 +20,7 @@ Score de engajamento (0–100) médio por classe verdadeira no teste: relaxed=3.
 - **De-dup antes do split.** 4.64% das linhas (115) eram duplicatas exatas; remover antes do split eliminou o risco sutil de a mesma janela cair em treino e teste com scores inflados. 2479 → 2364 → 1891/473.
 - **RobustScaler + clip a ±10, justificado empiricamente.** A decisão inicial era "usa RobustScaler porque há outliers". Depois de um questionamento do usuário ("mediana ≈ 0, IQR pequeno — ele faz diferença?"), medimos feature-por-feature: para ~50% das features os dois scalers são quase idênticos, mas para ~10% (entradas da matriz de covariância) o `std/IQR` é 30–248×, fazendo `StandardScaler` produzir valores na casa de 25 onde `RobustScaler` produz 6290 em escala bruta. O clip posterior trava o residual. Fração clipada: 0.94% treino, 0.99% teste — bounded sem cortar massa.
 - **Dois modelos com papéis distintos.** LogReg para score de engajamento (probabilidades calibradas, interpretáveis) e XGBoost para número de cabeçalho + importância por família. Não é "qual ganha", é "qual serve pra quê".
-- **Gap LogReg→XGB pequeno (+1.87 pt) lido corretamente.** Sinal de que a maior parte do problema é capturável linearmente — as features pré-extraídas do Bird (FFT, covariância, kurtosis) já fazem o trabalho não-linear pesado, XGBoost só adiciona interações marginais.
+- **Gap LogReg→XGB pequeno (+1.56 pt em CV, +1.76 pt em teste) lido corretamente.** Sinal de que a maior parte do problema é capturável linearmente — as features pré-extraídas do Bird (FFT, covariância, kurtosis) já fazem o trabalho não-linear pesado, XGBoost só adiciona interações marginais.
 - **Importância por família, não por feature.** Agregando os 988 gains do XGBoost em 13 famílias, `freq` domina com 46% da importância acumulada. Bate com o ranking ANOVA univariado — dois ângulos independentes concordando é um sinal forte.
 - **Hemisfério direito dominante no top-20 ANOVA.** AF8=7, TP10=7, TP9=6, AF7=0 features. Consistente com Posner & Petersen (1990): atenção sustentada tem viés direito. Não é um achado que a gente procurou, é um que caiu no colo ao ordenar F-stats.
 - **Engajamento coerente sem ground-truth direto.** Monotonicidade respeitada entre as classes (3.0 < 46.5 < 99.5), variância intra-classe não nula (usável como sinal contínuo, não apenas 3-níveis disfarçado), Spearman 0.93 com a ordem ordinal.
@@ -51,8 +51,8 @@ Score de engajamento (0–100) médio por classe verdadeira no teste: relaxed=3.
 | Ranking ANOVA | Sim | top-20 em F-stat; lag1_logcovM_2_2 no topo com F=1104 |
 | De-dup antes do split | Sim | 115 duplicatas removidas, split 80/20 estratificado |
 | Scaler (RobustScaler) | Sim | + clip a ±10 após verificação empírica |
-| LogReg L2 multinomial, 5-fold CV | Sim | 0.9514 ± 0.0075 |
-| XGBoost default + same CV | Sim | 0.9701 ± 0.0085 |
+| LogReg L2 multinomial, 5-fold CV | Sim | 0.9534 ± 0.0068 (scaler dentro da Pipeline) |
+| XGBoost default + same CV | Sim | 0.9690 ± 0.0070 (scaler dentro da Pipeline) |
 | Matrizes de confusão + classification_report | Sim | `notebooks/figures/confusion_{logreg,xgb}.png` |
 | BATR (beta/(alpha+theta)) | **Não** | CSV sem nomes de banda; axis decodificado mas BATR ficou como futuro |
 | Score de engajamento 0–100 | Sim | Opção B: `50*(P(concentrating) - P(relaxed) + 1)` via LogReg |
@@ -89,8 +89,7 @@ Ver `README.md`. O caminho curto:
 ```bash
 uv venv --python 3.12 && uv pip install -r requirements.txt
 PYTHONPATH=. python scripts/build_eda_notebook.py    # EDA
-PYTHONPATH=. python -c "from src.data import load_dedup_split; from src.features import fit_scaler, save_scaler, apply_scaler; Xtr,Xte,ytr,yte,_ = load_dedup_split(); s=fit_scaler(Xtr); save_scaler(s); apply_scaler(s,Xtr)"
-PYTHONPATH=. python -c "from src.data import load_dedup_split; from src.features import load_scaler, apply_scaler; from src.models import train_logreg, train_xgboost; Xtr,_,ytr,_,_ = load_dedup_split(); s=load_scaler(); Xs=apply_scaler(s,Xtr); train_logreg(Xs,ytr); train_xgboost(Xs,ytr)"
-PYTHONPATH=. python scripts/evaluate.py
+PYTHONPATH=. python scripts/train.py                 # scaler + LogReg + XGB + columns.json
+PYTHONPATH=. python scripts/evaluate.py              # test-set metrics + family importance
 streamlit run app/streamlit_app.py
 ```

@@ -46,3 +46,12 @@
 {"type": "metric", "name": "engagement_corr_pearson_concentrating", "value": 0.8543, "note": null, "ts": "2026-04-20T04:47:36"}
 {"type": "metric", "name": "engagement_corr_spearman_ordinal", "value": 0.9269, "note": null, "ts": "2026-04-20T04:47:36"}
 {"type": "finding", "title": "Engagement score verified as coherent", "detail": "Monotonicity OK: relaxed=3.0 < neutral=46.5 < concentrating=99.5. Range [0,100]. Spearman r with ordinal label = 0.9269. Pearson r with binary concentrating indicator = 0.8543. Score shows within-class variance (not collapsed to 3 points), so it's usable as a continuous signal, not just a 3-level proxy.", "ts": "2026-04-20T04:47:36"}
+{"type": "metric", "name": "logreg_cv_pipeline_mean", "value": 0.9534, "note": "honest CV, scaler refit per fold", "ts": "2026-04-20T10:42:34"}
+{"type": "metric", "name": "logreg_cv_pipeline_std", "value": 0.0068, "note": null, "ts": "2026-04-20T10:42:34"}
+{"type": "metric", "name": "xgb_cv_pipeline_mean", "value": 0.969, "note": "honest CV, scaler refit per fold", "ts": "2026-04-20T10:42:34"}
+{"type": "metric", "name": "xgb_cv_pipeline_std", "value": 0.007, "note": null, "ts": "2026-04-20T10:42:34"}
+{"type": "finding", "title": "Honest pipeline-CV numbers", "detail": "LogReg macro-F1 = 0.9534 ± 0.0068. XGBoost macro-F1 = 0.9690 ± 0.0070. Scaler refit per fold inside sklearn Pipeline. Test-set numbers (scripts/evaluate.py) are unaffected — they come from a locked holdout.", "ts": "2026-04-20T10:42:34"}
+{"type": "metric", "name": "logreg_test_macro_f1", "value": 0.9528, "note": null, "ts": "2026-04-20T10:43:00"}
+{"type": "metric", "name": "xgb_test_macro_f1", "value": 0.9704, "note": null, "ts": "2026-04-20T10:43:00"}
+{"type": "finding", "title": "Held-out test set — final honest numbers", "detail": "LogReg macro-F1 = 0.9528, XGBoost macro-F1 = 0.9704. Gap on test = +0.0176 (CV gap was +0.0187 — consistent, no suspicious train/test discrepancy). 473 rows, stratified split, scaler and models never saw this data.", "ts": "2026-04-20T10:43:00"}
+{"type": "finding", "title": "XGBoost importance dominated by frequency-domain features", "detail": "Top family: 'freq' with 0.459 summed importance. Ranking: {'freq': 0.4594487249851227, 'eigenval': 0.11125167459249496, 'topFreq': 0.07597670704126358, 'min': 0.06751847267150879, 'max': 0.06310917437076569}. Consistent with ANOVA ranking — both univariate and multivariate views agree that FFT bins carry the most signal.", "ts": "2026-04-20T10:43:00"}

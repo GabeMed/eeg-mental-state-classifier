@@ -84,17 +84,13 @@ PYTHONPATH=. python scripts/build_eda_notebook.py
 
 Gera/atualiza `notebooks/01_eda.ipynb`.
 
-### b) Treinar scaler + modelos (não existe `train.py`)
+### b) Treinar scaler + ambos os modelos
 
 ```bash
-PYTHONPATH=. python -c "from src.data import load_dedup_split; from src.features import fit_scaler, save_scaler, apply_scaler; from src.models import train_logreg, train_xgboost; Xtr,_,ytr,_,_=load_dedup_split(); s=fit_scaler(Xtr); save_scaler(s); Xtr_s=apply_scaler(s,Xtr); train_logreg(Xtr_s,ytr); train_xgboost(Xtr_s,ytr)"
+PYTHONPATH=. python scripts/train.py
 ```
 
-Se precisar regenerar as colunas esperadas para o app:
-
-```bash
-PYTHONPATH=. python scripts/save_columns.py
-```
+Um comando gera `artifacts/{scaler.pkl, logreg.pkl, xgb.pkl, columns.json}` e loga a CV honesta (scaler dentro da `sklearn.Pipeline`, re-ajustado por fold) em `artifacts/run_log.jsonl`.
 
 ### c) Avaliar no holdout + matrizes de confusão
 
