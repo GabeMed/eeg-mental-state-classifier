@@ -1,4 +1,4 @@
-"""Append-only run log for the Synapsee sprint.
+"""Append-only run log for this project.
 
 Usage:
     from src.report_log import log_finding, log_decision, log_doubt, log_metric
@@ -6,7 +6,7 @@ Usage:
     log_doubt("Is RobustScaler really different?", resolution="For ~10% of features yes; switched to RobustScaler + clip after measuring")
 
 Log is written to artifacts/run_log.jsonl (one JSON object per line, append-only).
-Use render_log.py to produce REPORT.md storyline section.
+Use render_log.py to produce the REPORT.md storyline section.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
 
 LOG_PATH = Path(__file__).resolve().parents[1] / "artifacts" / "run_log.jsonl"
 
@@ -39,8 +38,15 @@ def log_decision(title: str, detail: str) -> None:
 
 
 def log_doubt(question: str, resolution: Optional[str] = None) -> None:
-    """Question or concern that came up during the sprint. Pass resolution when resolved."""
-    _append({"type": "doubt", "question": question, "resolution": resolution, "status": "resolved" if resolution else "open"})
+    """Question or concern that came up during the project. Pass resolution when resolved."""
+    _append(
+        {
+            "type": "doubt",
+            "question": question,
+            "resolution": resolution,
+            "status": "resolved" if resolution else "open",
+        }
+    )
 
 
 def log_metric(name: str, value, note: Optional[str] = None) -> None:
