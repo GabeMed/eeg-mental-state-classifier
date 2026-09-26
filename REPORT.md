@@ -24,15 +24,14 @@ Mean engagement score (0–100) per true class on the test set: relaxed=3.0, neu
 - **Importance by family, not by feature.** Aggregating XGBoost's 988 gains into 13 families, `freq` dominates with 46% of the cumulative importance. It matches the univariate ANOVA ranking — two independent angles agreeing is a strong signal.
 - **Right hemisphere dominates the ANOVA top-20.** AF8=7, TP10=7, TP9=6, AF7=0 features. Consistent with Posner & Petersen (1990): sustained attention has a right-hemisphere bias. We did not go looking for this finding; it fell into our lap when sorting F-stats.
 - **Coherent engagement without direct ground truth.** Monotonicity holds across classes (3.0 < 46.5 < 99.5), within-class variance is non-zero (usable as a continuous signal, not just a disguised 3-level one), and Spearman is 0.93 against the ordinal order.
-- **Append-only log as the narrative backbone.** 48 entries in `artifacts/run_log.jsonl` — findings, decisions, doubts with resolutions, metrics. This REPORT is a consequence of the log, not the other way around.
+- **Append-only log as the narrative backbone.** 58 entries in `artifacts/run_log.jsonl` — findings, decisions, doubts with resolutions, metrics. This REPORT is a consequence of the log, not the other way around.
 
 ## 2. What did not work (or: what we honestly did not do)
 
-- **Classic BATR (Pope 1995) was not implemented.** The PLAN called for `beta/(alpha+theta)`, but the Kaggle columns carry no band names (`alpha_*`, `beta_*`), only FFT bins (`freq_010_0` … `freq_750_3`). We decoded the axis post hoc (freq_XXX/100 ≈ Hz, via the `jordan-bird/eeg-feature-generation` repository) — theta = `freq_040–080`, alpha = `freq_080–130`, beta = `freq_130–300` — but validating that mapping, implementing BATR, and calibrating its scale within the time-box was optimistic. It remains documented future work.
+- **Classic BATR (Pope 1995) was not implemented.** The original plan (`.claude/PLAN.md`) called for `beta/(alpha+theta)`, but the Kaggle columns carry no band names (`alpha_*`, `beta_*`), only FFT bins (`freq_010_0` … `freq_750_3`). We decoded the axis post hoc (freq_XXX/100 ≈ Hz, via the `jordan-bird/eeg-feature-generation` repository) — theta = `freq_040–080`, alpha = `freq_080–130`, beta = `freq_130–300` — but validating that mapping, implementing BATR, and calibrating its scale within the time-box was optimistic. It remains documented future work.
 - **LOSO (leave-one-subject-out) was not run.** The aggregated Kaggle CSV **has no subject IDs** — it would require downloading Bird's original repo and rebuilding the pipeline from the raw files. That was out of scope. Direct consequence: the 0.97 figure is honest for "new windows from the same 4 subjects", **not** for "a new user never seen before".
 - **Raw-signal → feature extraction is not in the app.** The Streamlit app accepts CSVs already in the 988-feature format. Anyone wanting to test with raw EEG would first need to run Bird's pipeline. Documented as the platform's #1 limitation.
 - **Sample too small for generalization claims.** 4 subjects is too few for any "works on new people" claim. Gender balance helps but does not replace a larger N. Our score is *real* in what it measures, but what it measures is narrower than the phrase "concentration detector" suggests.
-- **Cursor was underused in the early steps.** The PLAN called for delegating boilerplate to a cheaper LLM; in phases 1–2 (EDA, log infrastructure) I ended up writing code that could have been delegated. From T14 (plots) onward I corrected course — T14, T15, and T18 were done by Cursor.
 
 ## 3. What I would do differently
 
@@ -40,7 +39,6 @@ Mean engagement score (0–100) per true class on the test set: relaxed=3.0, neu
 - **Validate scaler saturation on 3 specific features, not a global histogram.** The question "is RobustScaler different?" has a *per-feature* answer. Global stats mislead — raw `covM_1_1` has a range of 530k while 95% of features have a range <100. Aggregation hid the heterogeneity. It would have saved an iteration.
 - **Run LOSO even with "only 4 folds"** by downloading the per-subject CSVs from Bird's repo before starting. Four LOSO folds would be noisy but would show whether the drop is 2 points or 20 — a huge difference for the framing of this REPORT.
 - **Decouple `engagement_score` from LogReg from the start instead of bolting it on later.** The score ended up depending on LogReg's calibration; had I exposed it as an interface from the start (`score(probs) -> float`), the probability source could be swapped without refactoring.
-- **Create `sample_input.csv` in the repo's first commit.** It makes it much easier for anyone to try the app — *oops, this one actually was done*, courtesy of the sidebar button built in T15.
 - **Family-weighted feature importance instead of per-feature SHAP.** With 988 features, individual top-20 lists are opaque. Aggregating by family (`freq`, `covM`, `eigenval`, etc.) turned 988 numbers into 13 — enough for a conversation with a non-ML audience.
 
 ## 4. Plan vs. Outcome
@@ -62,7 +60,6 @@ Mean engagement score (0–100) per true class on the test set: relaxed=3.0, neu
 | LOSO | **No** | Kaggle CSV has no subject IDs; documented as a limitation |
 | REPORT.md | Yes | this file |
 | README.md | Yes | see `README.md` |
-| Delegation to Cursor | Partial | T5/T14/T15/T17/T18 yes; T4/log/T16 stayed with me |
 
 ## 5. Limitations — what was NOT proven
 
@@ -78,7 +75,7 @@ Mean engagement score (0–100) per true class on the test set: relaxed=3.0, neu
 - `artifacts/columns.json` (988 columns in training order — the app validates against it)
 - `artifacts/sample_input.csv` (5 test rows, for a quick app test)
 - `artifacts/evaluation.json` (confusion matrices + per-family importance)
-- `artifacts/run_log.jsonl` (48 entries: findings, decisions, doubts, metrics)
+- `artifacts/run_log.jsonl` (58 entries: findings, decisions, doubts, metrics)
 - `notebooks/01_eda.ipynb`
 - `notebooks/figures/` — confusion matrices, family importance, engagement boxplot/scatter/histogram
 

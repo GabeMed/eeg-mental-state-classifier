@@ -26,7 +26,9 @@ A short document to settle the 4 gray areas before coding.
   - alpha (8–13 Hz): `freq_080`–`freq_130`
   - beta (13–30 Hz): `freq_130`–`freq_300`
 
-**Decision adopted:** **score = P(concentrating) from the logistic regression, normalized to 0–100.**
+**Decision adopted:** **score = 50 × (P(concentrating) − P(relaxed) + 1), using the logistic regression's probabilities.** This maps the concentrating-vs-relaxed polarity from [−1, 1] to [0, 100], so neutral windows land near the middle.
+
+*Update:* the first version of this decision used 100 × P(concentrating). The polarity form above is what `src/engagement.py` implements and what every reported engagement metric uses. The change is recorded in `artifacts/run_log.jsonl`.
 
 - **Why B and not BATR now:** the time-box cannot accommodate validating the band mappings above while still guaranteeing an interpretable BATR. The model-based proxy is coherent by construction with the dataset's own ground truth.
 - **What becomes future work (documented in the REPORT):** implement classic BATR using the band mapping derived from the frequency axiom above. Add it as a panel in the app.
