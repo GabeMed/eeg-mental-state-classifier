@@ -37,36 +37,36 @@ def render(entries: list[dict]) -> str:
     doubts = [e for e in entries if e["type"] == "doubt"]
     metrics = [e for e in entries if e["type"] == "metric"]
 
-    out = ["# Storyline — raciocínio durante o projeto\n"]
-    out.append("Auto-gerado a partir de `artifacts/run_log.jsonl`. Não editar manualmente.\n")
+    out = ["# Storyline — reasoning during the project\n"]
+    out.append("Auto-generated from `artifacts/run_log.jsonl`. Do not edit by hand.\n")
 
     if findings:
         lines = []
         for f in findings:
             lines.append(f"- **{f['title']}**  \n  {f['detail']}")
-        out.append(section("Achados empíricos", "\n".join(lines)))
+        out.append(section("Empirical findings", "\n".join(lines)))
 
     if decisions:
         lines = []
         for d in decisions:
             lines.append(f"- **{d['title']}**  \n  {d['detail']}")
-        out.append(section("Decisões metodológicas", "\n".join(lines)))
+        out.append(section("Methodological decisions", "\n".join(lines)))
 
     if doubts:
         lines = []
         for d in doubts:
-            status = "✅" if d.get("status") == "resolved" else "🟡 aberta"
+            status = "✅" if d.get("status") == "resolved" else "🟡 open"
             lines.append(f"- {status} **{d['question']}**")
             if d.get("resolution"):
-                lines.append(f"  Resolução: {d['resolution']}")
-        out.append(section("Dúvidas que apareceram durante o projeto", "\n".join(lines)))
+                lines.append(f"  Resolution: {d['resolution']}")
+        out.append(section("Doubts raised during the project", "\n".join(lines)))
 
     if metrics:
-        lines = ["| métrica | valor | nota |", "|---|---|---|"]
+        lines = ["| metric | value | note |", "|---|---|---|"]
         for m in metrics:
             note = m.get("note") or ""
             lines.append(f"| `{m['name']}` | {m['value']} | {note} |")
-        out.append(section("Métricas-chave", "\n".join(lines)))
+        out.append(section("Key metrics", "\n".join(lines)))
 
     return "\n".join(out)
 

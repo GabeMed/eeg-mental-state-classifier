@@ -1,10 +1,10 @@
 # EEG Mental State Classifier
 
-Projeto pessoal explorando classificação de estados mentais a partir de EEG no dataset Kaggle `birdy654/eeg-brainwave-dataset-mental-state`. O problema tem 3 classes (`relaxed`, `neutral`, `concentrating`) e 988 features já extraídas do sinal, coletado com headband Muse de 4 eletrodos (TP9, AF7, AF8, TP10). Este repo contém o pipeline end-to-end: geração de notebook de EDA, treino, artefatos de avaliação, plots de engajamento, e um app Streamlit para inferência.
+A personal project exploring mental-state classification from EEG on the Kaggle dataset `birdy654/eeg-brainwave-dataset-mental-state`. The problem has 3 classes (`relaxed`, `neutral`, `concentrating`) and 988 features already extracted from the signal, which was recorded with a 4-electrode Muse headband (TP9, AF7, AF8, TP10). This repo contains the end-to-end pipeline: EDA notebook generation, training, evaluation artifacts, engagement plots, and a Streamlit app for inference.
 
 ## Headline Results
 
-| Modelo | Test macro-F1 |
+| Model | Test macro-F1 |
 |---|---:|
 | Logistic Regression (L2) | **0.9528** |
 | XGBoost | **0.9704** |
@@ -12,10 +12,10 @@ Projeto pessoal explorando classificação de estados mentais a partir de EEG no
 ## Repo Layout
 
 ```text
-synapse/
+eeg-mental-state-classifier/
 ├── .claude/
 │   ├── DESIGN.md
-│   ├── PLANO.md
+│   ├── PLAN.md
 │   └── TASKS.md
 ├── app/
 │   └── streamlit_app.py
@@ -44,7 +44,8 @@ synapse/
 │   ├── plot_engagement.py
 │   ├── render_log.py
 │   ├── save_columns.py
-│   └── seed_log.py
+│   ├── seed_log.py
+│   └── train.py
 ├── src/
 │   ├── data.py
 │   ├── eda.py
@@ -54,13 +55,14 @@ synapse/
 │   └── report_log.py
 ├── .gitignore
 ├── CLAUDE.md
+├── README.md
 ├── REPORT.md
 └── requirements.txt
 ```
 
 ## Setup (`uv`, Python 3.12)
 
-`scikit-learn==1.4.2` não roda em Python 3.14 neste projeto. Use Python 3.12.
+`scikit-learn==1.4.2` does not run on Python 3.14 in this project. Use Python 3.12.
 
 ```bash
 uv venv --python 3.12
@@ -70,59 +72,59 @@ uv pip install -r requirements.txt
 
 ## Data
 
-1. Baixe `mental-state.csv` no Kaggle (`birdy654/eeg-brainwave-dataset-mental-state`).
-2. Coloque o arquivo em `data/mental-state.csv` (com hífen).
-3. O arquivo é ignorado no git (`.gitignore`).
+1. Download `mental-state.csv` from Kaggle (`birdy654/eeg-brainwave-dataset-mental-state`).
+2. Place the file at `data/mental-state.csv` (with a hyphen).
+3. The file is ignored by git (`.gitignore`).
 
-## How To Run (ordem recomendada)
+## How To Run (recommended order)
 
-### a) Gerar notebook de EDA
+### a) Generate the EDA notebook
 
 ```bash
 PYTHONPATH=. python scripts/build_eda_notebook.py
 ```
 
-Gera/atualiza `notebooks/01_eda.ipynb`.
+Creates or updates `notebooks/01_eda.ipynb`.
 
-### b) Treinar scaler + ambos os modelos
+### b) Train the scaler and both models
 
 ```bash
 PYTHONPATH=. python scripts/train.py
 ```
 
-Um comando gera `artifacts/{scaler.pkl, logreg.pkl, xgb.pkl, columns.json}` e loga a CV honesta (scaler dentro da `sklearn.Pipeline`, re-ajustado por fold) em `artifacts/run_log.jsonl`.
+One command produces `artifacts/{scaler.pkl, logreg.pkl, xgb.pkl, columns.json}` and logs the honest CV (scaler inside the `sklearn.Pipeline`, refit per fold) to `artifacts/run_log.jsonl`.
 
-### c) Avaliar no holdout + matrizes de confusão
+### c) Evaluate on the holdout + confusion matrices
 
 ```bash
 PYTHONPATH=. python scripts/evaluate.py
 ```
 
-Produz `artifacts/evaluation.json` e figuras em `notebooks/figures/`.
+Produces `artifacts/evaluation.json` and figures in `notebooks/figures/`.
 
-### d) Gerar figuras de engagement
+### d) Generate the engagement figures
 
 ```bash
 PYTHONPATH=. python scripts/plot_engagement.py
 ```
 
-### e) Subir app Streamlit
+### e) Launch the Streamlit app
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-Abra `http://localhost:8501`, clique em **Gerar CSV de exemplo** na sidebar e faça upload do CSV gerado no `file_uploader`.
+Open `http://localhost:8501`, click **Generate sample CSV** in the sidebar, and upload the generated CSV through the file uploader.
 
 ## Artifacts
 
-- `artifacts/logreg.pkl`: modelo Logistic Regression treinado no treino escalado.
-- `artifacts/xgb.pkl`: modelo XGBoost treinado no mesmo conjunto de treino.
-- `artifacts/scaler.pkl`: `RobustScaler` ajustado no treino (com clip aplicado no uso).
-- `artifacts/columns.json`: ordem/catálogo das 988 colunas esperadas no pipeline e no app.
-- `artifacts/evaluation.json`: métricas finais de teste e matrizes de confusão serializadas.
-- `artifacts/run_log.jsonl`: log append-only de métricas, decisões e achados da projeto.
+- `artifacts/logreg.pkl`: Logistic Regression model trained on the scaled training set.
+- `artifacts/xgb.pkl`: XGBoost model trained on the same training set.
+- `artifacts/scaler.pkl`: `RobustScaler` fit on the training set (clipping is applied at use time).
+- `artifacts/columns.json`: ordered catalog of the 988 columns expected by the pipeline and the app.
+- `artifacts/evaluation.json`: final test metrics and serialized confusion matrices.
+- `artifacts/run_log.jsonl`: append-only log of the project's metrics, decisions, and findings.
 
-## Contexto
+## Context
 
-Para narrativa técnica e decisões da projeto, leia `REPORT.md` e `.claude/PLANO.md`.
+For the technical narrative and project decisions, read `REPORT.md` and `.claude/PLAN.md`.

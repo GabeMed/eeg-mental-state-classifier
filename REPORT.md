@@ -1,90 +1,90 @@
 # REPORT — EEG Mental State Classification
 
-Projeto pessoal time-boxed sobre `birdy654/eeg-brainwave-dataset-mental-state`. Três classes (`relaxed`, `neutral`, `concentrating`), 988 features já extraídas por Bird, 4 sujeitos (2 homens, 2 mulheres), Muse headband (TP9, AF7, AF8, TP10) reamostrado a 150 Hz.
+A time-boxed personal project on `birdy654/eeg-brainwave-dataset-mental-state`. Three classes (`relaxed`, `neutral`, `concentrating`), 988 features pre-extracted by Bird, 4 subjects (2 male, 2 female), Muse headband (TP9, AF7, AF8, TP10) resampled to 150 Hz.
 
-## Números de cabeçalho
+## Headline numbers
 
-| Modelo | CV macro-F1 (5-fold, train) | Test macro-F1 (473 linhas trancadas) |
+| Model | CV macro-F1 (5-fold, train) | Test macro-F1 (473 locked rows) |
 |---|---|---|
 | LogReg L2 multinomial | 0.9534 ± 0.0068 | **0.9528** |
 | XGBoost (n=300, depth=6) | 0.9690 ± 0.0070 | **0.9704** |
 
-CV é honesta: o scaler vive **dentro** da `sklearn.Pipeline` de validação cruzada — `RobustScaler` + clip ±10 são re-ajustados em cada fold, então o fold de validação nunca toca estatísticas treinadas sobre ele mesmo. Gap CV→test: -0.0006 (LogReg), +0.0014 (XGB) — dentro do ruído, **sem discrepância suspeita** entre CV e holdout. O conjunto de teste jamais foi visto pelo scaler nem pelos modelos até `scripts/evaluate.py`.
+The CV is honest: the scaler lives **inside** the cross-validation `sklearn.Pipeline` — `RobustScaler` + ±10 clipping are refit in every fold, so the validation fold never touches statistics fit on itself. CV→test gap: -0.0006 (LogReg), +0.0014 (XGB) — within noise, **no suspicious discrepancy** between CV and holdout. The test set was never seen by the scaler or the models until `scripts/evaluate.py`.
 
-Score de engajamento (0–100) médio por classe verdadeira no teste: relaxed=3.0, neutral=46.5, concentrating=99.5. Spearman `r(score, label_ordinal) = 0.9269`.
+Mean engagement score (0–100) per true class on the test set: relaxed=3.0, neutral=46.5, concentrating=99.5. Spearman `r(score, label_ordinal) = 0.9269`.
 
 ---
 
-## 1. O que funcionou
+## 1. What worked
 
-- **De-dup antes do split.** 4.64% das linhas (115) eram duplicatas exatas; remover antes do split eliminou o risco sutil de a mesma janela cair em treino e teste com scores inflados. 2479 → 2364 → 1891/473.
-- **RobustScaler + clip a ±10, justificado empiricamente.** A decisão inicial era "usa RobustScaler porque há outliers". Depois de um questionamento do usuário ("mediana ≈ 0, IQR pequeno — ele faz diferença?"), medimos feature-por-feature: para ~50% das features os dois scalers são quase idênticos, mas para ~10% (entradas da matriz de covariância) o `std/IQR` é 30–248×, fazendo `StandardScaler` produzir valores na casa de 25 onde `RobustScaler` produz 6290 em escala bruta. O clip posterior trava o residual. Fração clipada: 0.94% treino, 0.99% teste — bounded sem cortar massa.
-- **Dois modelos com papéis distintos.** LogReg para score de engajamento (probabilidades calibradas, interpretáveis) e XGBoost para número de cabeçalho + importância por família. Não é "qual ganha", é "qual serve pra quê".
-- **Gap LogReg→XGB pequeno (+1.56 pt em CV, +1.76 pt em teste) lido corretamente.** Sinal de que a maior parte do problema é capturável linearmente — as features pré-extraídas do Bird (FFT, covariância, kurtosis) já fazem o trabalho não-linear pesado, XGBoost só adiciona interações marginais.
-- **Importância por família, não por feature.** Agregando os 988 gains do XGBoost em 13 famílias, `freq` domina com 46% da importância acumulada. Bate com o ranking ANOVA univariado — dois ângulos independentes concordando é um sinal forte.
-- **Hemisfério direito dominante no top-20 ANOVA.** AF8=7, TP10=7, TP9=6, AF7=0 features. Consistente com Posner & Petersen (1990): atenção sustentada tem viés direito. Não é um achado que a gente procurou, é um que caiu no colo ao ordenar F-stats.
-- **Engajamento coerente sem ground-truth direto.** Monotonicidade respeitada entre as classes (3.0 < 46.5 < 99.5), variância intra-classe não nula (usável como sinal contínuo, não apenas 3-níveis disfarçado), Spearman 0.93 com a ordem ordinal.
-- **Log append-only como backbone narrativo.** 48 entradas em `artifacts/run_log.jsonl` — findings, decisions, doubts com resolutions, metrics. Este REPORT é consequência do log, não o contrário.
+- **De-dup before the split.** 4.64% of the rows (115) were exact duplicates; removing them before the split eliminated the subtle risk of the same window landing in both train and test with inflated scores. 2479 → 2364 → 1891/473.
+- **RobustScaler + clipping at ±10, justified empirically.** The initial decision was "use RobustScaler because there are outliers". After a skeptical question ("median ≈ 0, small IQR — does it even make a difference?"), we measured feature by feature: for ~50% of the features the two scalers are nearly identical, but for ~10% (covariance-matrix entries) the `std/IQR` ratio is 30–248×, making `StandardScaler` produce values around 25 where `RobustScaler` produces 6290 on the raw scale. The subsequent clip bounds the residual. Clipped fraction: 0.94% train, 0.99% test — bounded without cutting real mass.
+- **Two models with distinct roles.** LogReg for the engagement score (calibrated, interpretable probabilities) and XGBoost for the headline number + per-family importance. It is not "which one wins", it is "which one is for what".
+- **Small LogReg→XGB gap (+1.56 pt in CV, +1.76 pt on test), read correctly.** A sign that most of the problem is linearly capturable — Bird's pre-extracted features (FFT, covariance, kurtosis) already do the heavy non-linear lifting, and XGBoost only adds marginal interactions.
+- **Importance by family, not by feature.** Aggregating XGBoost's 988 gains into 13 families, `freq` dominates with 46% of the cumulative importance. It matches the univariate ANOVA ranking — two independent angles agreeing is a strong signal.
+- **Right hemisphere dominates the ANOVA top-20.** AF8=7, TP10=7, TP9=6, AF7=0 features. Consistent with Posner & Petersen (1990): sustained attention has a right-hemisphere bias. We did not go looking for this finding; it fell into our lap when sorting F-stats.
+- **Coherent engagement without direct ground truth.** Monotonicity holds across classes (3.0 < 46.5 < 99.5), within-class variance is non-zero (usable as a continuous signal, not just a disguised 3-level one), and Spearman is 0.93 against the ordinal order.
+- **Append-only log as the narrative backbone.** 48 entries in `artifacts/run_log.jsonl` — findings, decisions, doubts with resolutions, metrics. This REPORT is a consequence of the log, not the other way around.
 
-## 2. O que não funcionou (ou: honestamente não fizemos)
+## 2. What did not work (or: what we honestly did not do)
 
-- **BATR clássico (Pope 1995) não foi implementado.** O PLANO previa `beta/(alpha+theta)`, mas as colunas do Kaggle não trazem nomes de banda (`alpha_*`, `beta_*`), só bins de FFT (`freq_010_0` … `freq_750_3`). Decodificamos o eixo post-hoc (freq_XXX/100 ≈ Hz, via repositório `jordan-bird/eeg-feature-generation`) — teta = `freq_040–080`, alfa = `freq_080–130`, beta = `freq_130–300` — mas validar esse mapeamento + implementar BATR + calibrar escala dentro do time-box era otimista. Ficou como trabalho futuro documentado.
-- **LOSO (leave-one-subject-out) não foi rodado.** O CSV agregado do Kaggle **não traz IDs de sujeito** — exigiria baixar o repo original do Bird e reconstruir o pipeline por arquivo bruto. Ficou fora de escopo. Consequência direta: o número 0.97 é honesto para "janelas novas dos mesmos 4 sujeitos", **não** para "usuário novo que nunca foi visto".
-- **Extração de sinal bruto → features não está no app.** O Streamlit aceita CSV já no formato das 988 features. Quem quiser testar com EEG bruto precisaria antes passar pelo pipeline do Bird. Documentado como limitação #1 da plataforma.
-- **Amostra pequena demais para reivindicações de generalização.** 4 sujeitos é pouco para qualquer claim "funciona em gente nova". Balanceado por gênero ajuda, mas não substitui N maior. Nosso score é *real* no que mede, mas o que ele mede é mais estreito do que a palavra "concentration detector" sugere.
-- **Cursor foi subutilizado nos primeiros passos.** O PLANO previa delegar boilerplate pra LLM mais barato; nas fases 1–2 (EDA, log infra) eu acabei escrevendo código que era delegável. A partir de T14 (plots) corrigi o rumo — T14, T15 e T18 foram do Cursor.
+- **Classic BATR (Pope 1995) was not implemented.** The PLAN called for `beta/(alpha+theta)`, but the Kaggle columns carry no band names (`alpha_*`, `beta_*`), only FFT bins (`freq_010_0` … `freq_750_3`). We decoded the axis post hoc (freq_XXX/100 ≈ Hz, via the `jordan-bird/eeg-feature-generation` repository) — theta = `freq_040–080`, alpha = `freq_080–130`, beta = `freq_130–300` — but validating that mapping, implementing BATR, and calibrating its scale within the time-box was optimistic. It remains documented future work.
+- **LOSO (leave-one-subject-out) was not run.** The aggregated Kaggle CSV **has no subject IDs** — it would require downloading Bird's original repo and rebuilding the pipeline from the raw files. That was out of scope. Direct consequence: the 0.97 figure is honest for "new windows from the same 4 subjects", **not** for "a new user never seen before".
+- **Raw-signal → feature extraction is not in the app.** The Streamlit app accepts CSVs already in the 988-feature format. Anyone wanting to test with raw EEG would first need to run Bird's pipeline. Documented as the platform's #1 limitation.
+- **Sample too small for generalization claims.** 4 subjects is too few for any "works on new people" claim. Gender balance helps but does not replace a larger N. Our score is *real* in what it measures, but what it measures is narrower than the phrase "concentration detector" suggests.
+- **Cursor was underused in the early steps.** The PLAN called for delegating boilerplate to a cheaper LLM; in phases 1–2 (EDA, log infrastructure) I ended up writing code that could have been delegated. From T14 (plots) onward I corrected course — T14, T15, and T18 were done by Cursor.
 
-## 3. O que eu faria diferente
+## 3. What I would do differently
 
-- **Começar pela decodificação do eixo de frequência, não pelo EDA tradicional.** Saber que `freq_XXX ≈ Hz/100` desde a hora 1 desbloqueia BATR, desbloqueia interpretação dos top-features em termos de "alfa posterior direito em 10.1 Hz" em vez de "freq_101_2". Seria o primeiro investimento de 20min a fazer diferença.
-- **Validar saturação do scaler com 3 features específicas, não com histograma global.** A pergunta "RobustScaler é diferente?" tem resposta *por feature*. Stats globais enganam — `covM_1_1` cru tem range 530k; 95% das features têm range <100. Agregação escondeu a heterogeneidade. Teria economizado uma iteração.
-- **Rodar LOSO mesmo que fosse "só com 4 folds"** baixando os CSVs por-sujeito do repo do Bird antes de começar. Quatro folds de LOSO seriam ruidosos mas mostrariam se o drop é de 2 ou 20 pontos — diferença enorme para o framing do REPORT.
-- **Separar `engagement_score` do LogReg desde o início, não encaixar depois.** O score acabou dependendo da calibração do LogReg; se eu tivesse começado expondo-o como uma interface (`score(probs) -> float`) daria pra trocar a fonte das probabilidades sem refatorar.
-- **Criar `sample_input.csv` no primeiro cadastro do repo.** Fica muito mais fácil para o avaliador testar o app — *ops, esse sim foi feito*, cortesia do botão no sidebar gerado em T15.
-- **Feature importance ponderada por família ao invés de SHAP-por-feature.** Com 988 features, top-20 individuais são opacos. Agregar por família (`freq`, `covM`, `eigenval`, etc.) transformou 988 números em 13 — suficiente pra uma conversa com stakeholder não-ML.
+- **Start by decoding the frequency axis, not with traditional EDA.** Knowing that `freq_XXX ≈ Hz/100` from hour 1 unlocks BATR and unlocks interpreting the top features as "right posterior alpha at 10.1 Hz" instead of "freq_101_2". It would have been the first 20-minute investment to make a difference.
+- **Validate scaler saturation on 3 specific features, not a global histogram.** The question "is RobustScaler different?" has a *per-feature* answer. Global stats mislead — raw `covM_1_1` has a range of 530k while 95% of features have a range <100. Aggregation hid the heterogeneity. It would have saved an iteration.
+- **Run LOSO even with "only 4 folds"** by downloading the per-subject CSVs from Bird's repo before starting. Four LOSO folds would be noisy but would show whether the drop is 2 points or 20 — a huge difference for the framing of this REPORT.
+- **Decouple `engagement_score` from LogReg from the start instead of bolting it on later.** The score ended up depending on LogReg's calibration; had I exposed it as an interface from the start (`score(probs) -> float`), the probability source could be swapped without refactoring.
+- **Create `sample_input.csv` in the repo's first commit.** It makes it much easier for anyone to try the app — *oops, this one actually was done*, courtesy of the sidebar button built in T15.
+- **Family-weighted feature importance instead of per-feature SHAP.** With 988 features, individual top-20 lists are opaque. Aggregating by family (`freq`, `covM`, `eigenval`, etc.) turned 988 numbers into 13 — enough for a conversation with a non-ML audience.
 
-## 4. Plano vs. Entrega
+## 4. Plan vs. Outcome
 
-| Item do PLANO | Entregue? | Observação |
+| PLAN item | Done? | Notes |
 |---|---|---|
-| EDA: shape, duplicatas, outliers, classes | Sim | `notebooks/01_eda.ipynb` com comparação empírica de scalers |
-| Ranking ANOVA | Sim | top-20 em F-stat; lag1_logcovM_2_2 no topo com F=1104 |
-| De-dup antes do split | Sim | 115 duplicatas removidas, split 80/20 estratificado |
-| Scaler (RobustScaler) | Sim | + clip a ±10 após verificação empírica |
-| LogReg L2 multinomial, 5-fold CV | Sim | 0.9534 ± 0.0068 (scaler dentro da Pipeline) |
-| XGBoost default + same CV | Sim | 0.9690 ± 0.0070 (scaler dentro da Pipeline) |
-| Matrizes de confusão + classification_report | Sim | `notebooks/figures/confusion_{logreg,xgb}.png` |
-| BATR (beta/(alpha+theta)) | **Não** | CSV sem nomes de banda; axis decodificado mas BATR ficou como futuro |
-| Score de engajamento 0–100 | Sim | Opção B: `50*(P(concentrating) - P(relaxed) + 1)` via LogReg |
-| Validação do score (scatter, boxplot, correlação) | Sim | Spearman 0.9269, 3 figuras em `notebooks/figures/` |
-| Streamlit aceitando CSV | Sim | valida contra `artifacts/columns.json`, botão pra gerar/baixar sample |
-| Streamlit mostrando classe + score por linha | Sim | + concordância LogReg–XGB, score médio, classe predominante |
-| LOSO | **Não** | Kaggle CSV não tem IDs de sujeito; documentado como limitação |
-| REPORT.md | Sim | este arquivo |
-| README.md | Sim | ver `README.md` |
-| Delegação para Cursor | Parcial | T5/T14/T15/T17/T18 sim; T4/log/T16 ficaram comigo |
+| EDA: shape, duplicates, outliers, classes | Yes | `notebooks/01_eda.ipynb` with an empirical scaler comparison |
+| ANOVA ranking | Yes | top-20 by F-stat; lag1_logcovM_2_2 at the top with F=1104 |
+| De-dup before the split | Yes | 115 duplicates removed, stratified 80/20 split |
+| Scaler (RobustScaler) | Yes | + clipping at ±10 after empirical verification |
+| LogReg L2 multinomial, 5-fold CV | Yes | 0.9534 ± 0.0068 (scaler inside the Pipeline) |
+| XGBoost default + same CV | Yes | 0.9690 ± 0.0070 (scaler inside the Pipeline) |
+| Confusion matrices + classification_report | Yes | `notebooks/figures/confusion_{logreg,xgb}.png` |
+| BATR (beta/(alpha+theta)) | **No** | CSV has no band names; axis decoded but BATR left as future work |
+| Engagement score 0–100 | Yes | Option B: `50*(P(concentrating) - P(relaxed) + 1)` via LogReg |
+| Score validation (scatter, boxplot, correlation) | Yes | Spearman 0.9269, 3 figures in `notebooks/figures/` |
+| Streamlit accepting CSV | Yes | validates against `artifacts/columns.json`, button to generate/download a sample |
+| Streamlit showing class + score per row | Yes | + LogReg–XGB agreement, mean score, predominant class |
+| LOSO | **No** | Kaggle CSV has no subject IDs; documented as a limitation |
+| REPORT.md | Yes | this file |
+| README.md | Yes | see `README.md` |
+| Delegation to Cursor | Partial | T5/T14/T15/T17/T18 yes; T4/log/T16 stayed with me |
 
-## 5. Limitações — o que NÃO foi provado
+## 5. Limitations — what was NOT proven
 
-1. **Generalização entre sujeitos.** 0.97 vale para "nova janela dos mesmos 4 sujeitos". Janelas adjacentes da mesma sessão são quase-idênticas; split aleatório permite que o modelo decore assinaturas de sessão.
-2. **Generalização entre sessões.** Nem mesmo protocolo intra-sujeito-inter-sessão foi testado.
-3. **Generalização para EEG bruto.** O app recebe features; a ponte "sinal cru → 988 features" do Bird não foi reembalada.
-4. **Robustez do score de engajamento.** Validado por monotonicidade e correlação ordinal; não validado contra medida psicométrica externa (NASA-TLX, tempo-na-tarefa, etc.).
-5. **Calibração das probabilidades do XGBoost.** Não aplicamos `CalibratedClassifierCV`; por isso o score usa LogReg, cujas probabilidades são naturalmente calibradas.
+1. **Cross-subject generalization.** 0.97 holds for "a new window from the same 4 subjects". Adjacent windows from the same session are near-identical; a random split lets the model memorize session signatures.
+2. **Cross-session generalization.** Not even a within-subject, cross-session protocol was tested.
+3. **Generalization to raw EEG.** The app takes features; Bird's "raw signal → 988 features" bridge was not repackaged.
+4. **Robustness of the engagement score.** Validated by monotonicity and ordinal correlation; not validated against an external psychometric measure (NASA-TLX, time-on-task, etc.).
+5. **Calibration of XGBoost probabilities.** We did not apply `CalibratedClassifierCV`; that is why the score uses LogReg, whose probabilities are naturally well calibrated.
 
-## 6. Artefatos produzidos
+## 6. Artifacts produced
 
 - `artifacts/logreg.pkl`, `artifacts/xgb.pkl`, `artifacts/scaler.pkl`
-- `artifacts/columns.json` (988 colunas, ordem do treino — o app valida contra isso)
-- `artifacts/sample_input.csv` (5 linhas do teste, para teste rápido do app)
-- `artifacts/evaluation.json` (matrizes de confusão + importância por família)
-- `artifacts/run_log.jsonl` (48 entradas: findings, decisions, doubts, metrics)
+- `artifacts/columns.json` (988 columns in training order — the app validates against it)
+- `artifacts/sample_input.csv` (5 test rows, for a quick app test)
+- `artifacts/evaluation.json` (confusion matrices + per-family importance)
+- `artifacts/run_log.jsonl` (48 entries: findings, decisions, doubts, metrics)
 - `notebooks/01_eda.ipynb`
 - `notebooks/figures/` — confusion matrices, family importance, engagement boxplot/scatter/histogram
 
-## 7. Como reproduzir
+## 7. How to reproduce
 
-Ver `README.md`. O caminho curto:
+See `README.md`. The short path:
 
 ```bash
 uv venv --python 3.12 && uv pip install -r requirements.txt

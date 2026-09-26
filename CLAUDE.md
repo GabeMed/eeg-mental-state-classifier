@@ -45,7 +45,7 @@ When researching, designing, or making a technical claim, follow this chain in
 order. Never skip steps.
 
 1. **This codebase** — read the relevant `src/*.py`, notebooks, artifacts.
-2. **Project docs** — `.claude/PLANO.md`, `.claude/DESIGN.md`, `REPORT.md`, inline docstrings.
+2. **Project docs** — `.claude/PLAN.md`, `.claude/DESIGN.md`, `REPORT.md`, inline docstrings.
 3. **Authoritative external sources** — official library docs, original papers
    (Pope 1995 for BATR, Posner & Petersen 1990 for attention hemispheric bias),
    dataset provenance repos (`jordan-bird/eeg-feature-generation`).
@@ -83,7 +83,6 @@ Current list lives in `.claude/TASKS.md` §Gates.
 - `PYTHONPATH=.` when running scripts that import from `src/`.
 - `artifacts/` is committed (so the app runs out-of-the-box).
 - `data/mental-state.csv` is gitignored (Kaggle distribution terms + size).
-- `.claude/CHALLENGE.md` is gitignored (external brief, not for this repo).
 - Artifacts and log files are authoritative for the historical record. Do not
   regenerate them cosmetically — regenerate only when the underlying code or
   data changed.

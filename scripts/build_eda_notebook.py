@@ -32,19 +32,19 @@ def build_notebook() -> nbf.NotebookNode:
             """
 # EEG Mental State — EDA (01)
 
-**Pergunta que queremos responder antes de modelar:**
-O dataset tem estrutura suficiente para separar `relaxed`, `neutral` e `concentrating`? Quais features carregam mais sinal? Como devemos escalar os dados?
+**Question we want to answer before modeling:**
+Does the dataset have enough structure to separate `relaxed`, `neutral`, and `concentrating`? Which features carry the most signal? How should we scale the data?
 
-**Saídas deste notebook são usadas para justificar:**
-- Escolha do scaler (RobustScaler vs StandardScaler)
-- De-duplicação antes do split
-- Expectativa realista de desempenho do modelo baseline
+**Outputs of this notebook are used to justify:**
+- The scaler choice (RobustScaler vs StandardScaler)
+- De-duplication before the split
+- A realistic performance expectation for the baseline model
 """
         ),
         code(
             """
 import sys, os
-# Permite importar de src/ quando o notebook é executado na raiz do repo
+# Allows importing from src/ when the notebook runs from the repo root
 ROOT = os.path.abspath(os.path.join(os.getcwd(), '..'))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
@@ -68,9 +68,9 @@ print(f"loaded: {df.shape}")
         ),
         md(
             """
-## 1. Sanity check — o que temos nas mãos
+## 1. Sanity check — what we have in hand
 
-Antes de qualquer plot, conferir o básico: forma, classes, nulos, duplicatas. Se algo aqui estiver errado, todo o resto desmorona.
+Before any plot, check the basics: shape, classes, nulls, duplicates. If anything here is wrong, everything else falls apart.
 """
         ),
         code(
@@ -82,15 +82,15 @@ for k, v in info.items():
         ),
         md(
             """
-**Leitura:**
-- 2479 linhas × 989 colunas → **~2.5 linhas por feature**. Regime de alta dimensão + amostras pequenas. Isto define todo o risco de overfitting adiante.
-- Classes balanceadas (33% cada) → não vamos precisar de class weighting ou resampling.
-- **115 linhas duplicadas (4.6%)** precisam ser removidas antes do split. Se deixamos, corremos o risco de a mesma janela aparecer em treino e teste, inflando a métrica.
+**Reading:**
+- 2479 rows × 989 columns → **~2.5 rows per feature**. High-dimensional, small-sample regime. This defines all the overfitting risk ahead.
+- Balanced classes (33% each) → no need for class weighting or resampling.
+- **115 duplicate rows (4.6%)** must be removed before the split. If we keep them, the same window may appear in both train and test, inflating the metric.
 """
         ),
         md(
             """
-## 2. Distribuição de classes
+## 2. Class distribution
 """
         ),
         code(
@@ -98,8 +98,8 @@ for k, v in info.items():
 fig, ax = plt.subplots(figsize=(7, 4))
 counts = df[LABEL_COL].value_counts().sort_index()
 ax.bar([class_name(c) for c in counts.index], counts.values, color=['#4C72B0', '#55A868', '#C44E52'])
-ax.set_title('Distribuição de janelas por estado mental')
-ax.set_ylabel('Número de janelas')
+ax.set_title('Window distribution by mental state')
+ax.set_ylabel('Number of windows')
 for i, v in enumerate(counts.values):
     ax.text(i, v + 5, str(v), ha='center')
 plt.tight_layout()
@@ -108,9 +108,9 @@ plt.show()
         ),
         md(
             """
-## 3. Escolha de scaler — o que os números realmente dizem
+## 3. Scaler choice — what the numbers actually say
 
-A intuição inicial: outliers extremos → StandardScaler compromete a escala → usar RobustScaler. Mas essa justificativa é preguiçosa se não for medida. Vamos fazer a comparação empírica.
+The initial intuition: extreme outliers → StandardScaler distorts the scale → use RobustScaler. But that justification is lazy unless it is measured. Let's run the empirical comparison.
 """
         ),
         code(
@@ -125,7 +125,7 @@ for k, v in outliers.items():
         ),
         md(
             """
-**Visão agregada:** máximo absoluto é 1704× o p99. A métrica grita "StandardScaler falha". Mas isso mistura as 988 features num único número. Per-feature, a história é mais sutil.
+**Aggregate view:** the absolute maximum is 1704× the p99. The metric screams "StandardScaler fails". But this collapses all 988 features into a single number. Per feature, the story is more subtle.
 """
         ),
         code(
@@ -134,23 +134,23 @@ from sklearn.preprocessing import StandardScaler, RobustScaler
 
 feats = df.drop(columns=['Label'])
 
-# Razão std/IQR por feature. Ratio ~1 = scalers equivalentes; ratio alto = outliers dominam std.
+# std/IQR ratio per feature. Ratio ~1 = equivalent scalers; high ratio = outliers dominate std.
 ratios = (feats.std() / (feats.quantile(0.75) - feats.quantile(0.25)).replace(0, np.nan)).dropna()
-print('Distribuição do ratio std/IQR entre as 988 features:')
-print(f'  mediana : {ratios.median():.2f}  ← metade das features: scalers equivalentes')
+print('Distribution of the std/IQR ratio across the 988 features:')
+print(f'  median  : {ratios.median():.2f}  ← half of the features: equivalent scalers')
 print(f'  p90     : {ratios.quantile(0.90):.2f}')
 print(f'  p99     : {ratios.quantile(0.99):.2f}')
-print(f'  máximo  : {ratios.max():.2f}  ← covariâncias da matriz de canais')
+print(f'  max     : {ratios.max():.2f}  ← channel covariance-matrix entries')
 
-# Top-5 features onde os scalers mais divergem
-print('\\nTop-5 features com maior std/IQR (onde a escolha importa):')
+# Top-5 features where the scalers diverge most
+print('\\nTop-5 features with the highest std/IQR (where the choice matters):')
 for feat in ratios.sort_values(ascending=False).head(5).index:
     print(f'  {feat:25s}  std/IQR = {ratios[feat]:>7.1f}')
 """
         ),
         code(
             """
-# Comparação direta: o que cada scaler produz para covM_1_1 (pior caso)
+# Direct comparison: what each scaler produces for covM_1_1 (worst case)
 worst = ratios.idxmax()
 raw = feats[worst]
 ss = (raw - raw.mean()) / raw.std()
@@ -166,22 +166,22 @@ plt.tight_layout(); plt.show()
         ),
         md(
             """
-**Leitura final — decisão:**
+**Final reading — decision:**
 
-Para **metade das features** (std/IQR ≈ 0.92) os dois scalers produzem valores quase idênticos. A discussão só importa para ~10% das features — entradas da matriz de covariância (`covM_*`) com ratios 30–248×.
+For **half of the features** (std/IQR ≈ 0.92) both scalers produce nearly identical values. The debate only matters for ~10% of the features — covariance-matrix entries (`covM_*`) with ratios of 30–248×.
 
-Nesse grupo minoritário:
-- **StandardScaler** produz saída bounded (máx ~25 para `covM_1_1`), mas comprime a variação normal porque o std é puxado pelos outliers.
-- **RobustScaler** preserva a separação entre valores típicos, mas deixa outliers com magnitude extrema (máx >6000 para `covM_1_1`).
+Within that minority group:
+- **StandardScaler** produces bounded output (max ~25 for `covM_1_1`), but compresses normal variation because the std is pulled up by the outliers.
+- **RobustScaler** preserves the separation between typical values, but leaves outliers at extreme magnitude (max >6000 for `covM_1_1`).
 
-**Decisão adotada:** `RobustScaler` seguido de clip para ±10. Combina o melhor dos dois — mediana/IQR ignora outliers no cálculo da escala, e o clip pós-transformação evita que valores residuais estourem em regressão logística. Para XGBoost é irrelevante (modelo é invariante a escala), mas mantemos o mesmo pipeline por consistência.
+**Decision adopted:** `RobustScaler` followed by clipping to ±10. It combines the best of both — median/IQR ignores outliers when computing the scale, and the post-transform clip keeps residual extreme values from blowing up logistic regression. For XGBoost it is irrelevant (the model is scale-invariant), but we keep the same pipeline for consistency.
 """
         ),
         md(
             """
-## 4. ANOVA — quais features discriminam entre estados?
+## 4. ANOVA — which features discriminate between states?
 
-F-stat alto ≡ média dos grupos difere relativo à variância interna ≡ a feature "vê" a classe. É um ranking univariado, rápido, útil para diagnóstico — **não** substitui a importância multivariada que o modelo vai calcular.
+High F-stat ≡ group means differ relative to within-group variance ≡ the feature "sees" the class. It is a fast univariate ranking, useful for diagnosis — it does **not** replace the multivariate importance the model will compute.
 """
         ),
         code(
@@ -192,28 +192,28 @@ anova_top
         ),
         code(
             """
-# Boxplot das 6 features mais discriminativas, por classe
+# Boxplot of the 6 most discriminative features, by class
 top6 = anova_top.head(6)['feature'].tolist()
 fig, axes = plt.subplots(2, 3, figsize=(15, 8))
 for ax, feat in zip(axes.ravel(), top6):
     data_by_class = [df.loc[df[LABEL_COL] == c, feat].values for c in sorted(df[LABEL_COL].unique())]
     ax.boxplot(data_by_class, labels=[class_name(c) for c in sorted(df[LABEL_COL].unique())], showfliers=False)
     ax.set_title(feat, fontsize=10)
-plt.suptitle('Top-6 features por F-stat — distribuição por classe (outliers ocultos)', y=1.02)
+plt.suptitle('Top-6 features by F-stat — distribution by class (outliers hidden)', y=1.02)
 plt.tight_layout()
 plt.show()
 """
         ),
         md(
             """
-**Leitura:** medianas visualmente separáveis → existe sinal capturável por um modelo linear. Sem separação visível → teríamos um alerta vermelho aqui.
+**Reading:** visually separable medians → there is signal a linear model can capture. With no visible separation, this would be a red flag.
 """
         ),
         md(
             """
-## 5. Correlação entre features — risco de redundância
+## 5. Feature correlation — redundancy risk
 
-988 features é muito. Boa parte será redundante. A regressão logística L2 lida com multicolinearidade ok, mas XGBoost se beneficia mais de features independentes. Visualizar o padrão antes de modelar.
+988 features is a lot. Many will be redundant. L2 logistic regression handles multicollinearity fine, but XGBoost benefits more from independent features. Visualize the pattern before modeling.
 """
         ),
         code(
@@ -223,28 +223,28 @@ corr = df[top50].corr()
 
 fig, ax = plt.subplots(figsize=(12, 10))
 sns.heatmap(corr, cmap='coolwarm', center=0, vmin=-1, vmax=1, cbar_kws={'label': 'Pearson r'}, ax=ax)
-ax.set_title('Correlação entre top-50 features por variância')
+ax.set_title('Correlation among the top-50 features by variance')
 plt.tight_layout()
 plt.show()
 """
         ),
         md(
             """
-**Leitura:** blocos visíveis na diagonal indicam grupos de features correlacionadas — típico quando features são lags/estatísticas computadas sobre o mesmo canal. Nota: não removeremos features correlacionadas manualmente — deixamos L2 e XGBoost lidarem com isso. Fazer feature selection agressiva com tão poucas amostras adiciona risco de overfitting no processo de seleção.
+**Reading:** visible blocks along the diagonal indicate groups of correlated features — typical when features are lags/statistics computed over the same channel. Note: we will not remove correlated features manually — we let L2 and XGBoost handle it. Aggressive feature selection with so few samples adds overfitting risk to the selection process itself.
 """
         ),
         md(
             """
-## 6. Conclusões que alimentam a modelagem
+## 6. Conclusions that feed the modeling
 
-| Achado | Consequência |
+| Finding | Consequence |
 |--------|--------------|
-| Outliers 4+ ordens de magnitude além do p99 | RobustScaler em vez de StandardScaler |
-| 115 duplicatas (4.6%) | De-dup antes do split estratificado |
-| Classes balanceadas (33/33/33) | Sem class weighting; macro-F1 como métrica principal |
-| Features top-ANOVA mostram separação visível | Existe sinal linear capturável — LogReg tem chance real |
-| Correlação evidente entre top-50 | Deixar regularização L2 e XGBoost lidarem; não fazer seleção manual |
-| 988 features × 2479 linhas | Alto risco de overfitting; CV estratificada é obrigatória |
+| Outliers 4+ orders of magnitude beyond the p99 | RobustScaler instead of StandardScaler |
+| 115 duplicates (4.6%) | De-dup before the stratified split |
+| Balanced classes (33/33/33) | No class weighting; macro-F1 as the primary metric |
+| Top-ANOVA features show visible separation | Capturable linear signal exists — LogReg has a real chance |
+| Clear correlation among the top-50 | Let L2 regularization and XGBoost handle it; no manual selection |
+| 988 features × 2479 rows | High overfitting risk; stratified CV is mandatory |
 """
         ),
     ]

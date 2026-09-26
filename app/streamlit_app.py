@@ -31,7 +31,7 @@ def load_expected_columns(path: Path) -> list[str]:
     with path.open("r", encoding="utf-8") as f:
         cols = json.load(f)
     if not isinstance(cols, list):
-        raise ValueError("artifacts/columns.json deve ser uma lista de colunas.")
+        raise ValueError("artifacts/columns.json must be a list of column names.")
     return cols
 
 
@@ -76,8 +76,8 @@ def run_inference(raw_df: pd.DataFrame, artifacts: dict) -> pd.DataFrame:
 
     out = pd.DataFrame({
         "row": np.arange(len(X)) + 1,
-        "estado_logreg": [CLASS_NAMES[v] for v in lr_pred],
-        "estado_xgb": [CLASS_NAMES[v] for v in xgb_pred],
+        "state_logreg": [CLASS_NAMES[v] for v in lr_pred],
+        "state_xgb": [CLASS_NAMES[v] for v in xgb_pred],
         "engagement_score": score.round(2),
     })
     classes = list(lr.classes_)
@@ -90,36 +90,36 @@ st.set_page_config(page_title="EEG Mental State Classifier", layout="wide")
 st.title("EEG Mental State Classifier")
 st.markdown(
     """
-Este app espera um arquivo CSV com **exatamente as 988 colunas de features**
-definidas em `artifacts/columns.json` (a coluna `Label` **não é obrigatória**).
+This app expects a CSV file with **exactly the 988 feature columns**
+defined in `artifacts/columns.json` (the `Label` column is **optional**).
 
-Cada linha do CSV é tratada como **uma janela temporal** independente.
+Each CSV row is treated as **one independent time window**.
 
-A saída final (na próxima etapa) será, por linha:
-- estado mental predito
-- score de engajamento
+For each row, the app outputs:
+- the predicted mental state
+- the engagement score
 """
 )
 
 with st.sidebar:
-    st.subheader("Utilitários")
-    if st.button("Gerar CSV de exemplo"):
+    st.subheader("Utilities")
+    if st.button("Generate sample CSV"):
         try:
             sample_df = generate_sample_input(SAMPLE_INPUT_PATH)
-            st.success(f"Exemplo gerado: {SAMPLE_INPUT_PATH.as_posix()}")
-            st.caption(f"{len(sample_df)} linhas salvas.")
+            st.success(f"Sample generated: {SAMPLE_INPUT_PATH.as_posix()}")
+            st.caption(f"{len(sample_df)} rows saved.")
         except Exception as exc:
-            st.error(f"Falha ao gerar CSV de exemplo: {exc}")
+            st.error(f"Failed to generate sample CSV: {exc}")
 
     if SAMPLE_INPUT_PATH.exists():
         st.download_button(
-            label="Baixar CSV de exemplo",
+            label="Download sample CSV",
             data=SAMPLE_INPUT_PATH.read_bytes(),
             file_name=SAMPLE_INPUT_PATH.name,
             mime="text/csv",
         )
 
-uploaded_file = st.file_uploader("Envie um CSV para validação", type=["csv"])
+uploaded_file = st.file_uploader("Upload a CSV for validation", type=["csv"])
 
 if uploaded_file is not None:
     try:
@@ -129,7 +129,7 @@ if uploaded_file is not None:
 
         expected_columns = load_expected_columns(COLUMNS_PATH)
     except Exception as exc:
-        st.error(f"Erro ao ler arquivo ou colunas esperadas: {exc}")
+        st.error(f"Error reading the file or the expected columns: {exc}")
         st.stop()
 
     expected_set = set(expected_columns)
@@ -140,50 +140,50 @@ if uploaded_file is not None:
         preview = ", ".join(missing_columns[:10])
         suffix = " ..." if len(missing_columns) > 10 else ""
         st.error(
-            f"CSV inválido: faltam {len(missing_columns)} colunas esperadas. "
-            f"Primeiras ausentes: {preview}{suffix}"
+            f"Invalid CSV: {len(missing_columns)} expected columns are missing. "
+            f"First missing: {preview}{suffix}"
         )
         st.stop()
 
     n_rows = int(np.int64(len(uploaded_df)))
-    st.success(f"CSV validado: {n_rows} janelas aceitas")
+    st.success(f"CSV validated: {n_rows} windows accepted")
     st.info(
-        f"{len(uploaded_df.columns)} colunas recebidas, {len(expected_columns)} esperadas"
+        f"{len(uploaded_df.columns)} columns received, {len(expected_columns)} expected"
     )
 
     try:
         artifacts = load_artifacts()
         results = run_inference(uploaded_df, artifacts)
     except Exception as exc:
-        st.error(f"Erro na inferência: {exc}")
+        st.error(f"Inference error: {exc}")
         st.stop()
 
-    st.subheader("Resultados por janela")
+    st.subheader("Results per window")
     st.dataframe(results, use_container_width=True)
 
-    st.subheader("Resumo")
+    st.subheader("Summary")
     c1, c2, c3 = st.columns(3)
     with c1:
         st.metric(
-            "Score médio de engajamento",
+            "Mean engagement score",
             f"{results['engagement_score'].mean():.1f}",
-            help="Média do score (0–100) sobre todas as janelas do CSV.",
+            help="Mean score (0–100) across all windows in the CSV.",
         )
     with c2:
         st.metric(
-            "Estado predominante (LogReg)",
-            results["estado_logreg"].mode().iloc[0],
+            "Predominant state (LogReg)",
+            results["state_logreg"].mode().iloc[0],
         )
     with c3:
         st.metric(
-            "Concordância LogReg–XGB",
-            f"{(results['estado_logreg'] == results['estado_xgb']).mean() * 100:.0f}%",
-            help="Fração de janelas em que os dois modelos concordam no estado predito.",
+            "LogReg–XGB agreement",
+            f"{(results['state_logreg'] == results['state_xgb']).mean() * 100:.0f}%",
+            help="Fraction of windows where both models agree on the predicted state.",
         )
 
     st.download_button(
-        label="Baixar resultados (CSV)",
+        label="Download results (CSV)",
         data=results.to_csv(index=False).encode("utf-8"),
-        file_name="synapse_predictions.csv",
+        file_name="eeg_predictions.csv",
         mime="text/csv",
     )

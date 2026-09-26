@@ -8,12 +8,12 @@ from src.report_log import log_finding, log_decision, log_doubt, log_metric
 
 # ---- FINDINGS from T1 (dataset inspection) ----
 log_finding(
-    "Dataset shape confirms PLANO assumptions",
+    "Dataset shape confirms PLAN assumptions",
     "2479 rows × 989 cols (988 features + Label). Classes balanced at 33%/33.5%/33.5%. No nulls. All float64.",
 )
 log_finding(
     "Exact duplicate rate: 4.64% (115 rows)",
-    "Matches PLANO's expectation. De-dup before split is mandatory — else same window appears in train and test.",
+    "Matches PLAN's expectation. De-dup before split is mandatory — else same window appears in train and test.",
 )
 log_finding(
     "Outlier severity confirms RobustScaler need",

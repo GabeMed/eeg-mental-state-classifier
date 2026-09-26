@@ -62,9 +62,9 @@ sns.boxplot(
         "markersize": 8,
     },
 )
-plt.xlabel("Classe verdadeira")
-plt.ylabel("Score de engajamento")
-plt.title("Score de engajamento por estado (conjunto de teste)")
+plt.xlabel("True class")
+plt.ylabel("Engagement score")
+plt.title("Engagement score by state (test set)")
 plt.tight_layout()
 plt.savefig(FIGURES / "engagement_boxplot.png", dpi=130)
 plt.close()
@@ -80,9 +80,9 @@ sns.scatterplot(
     alpha=0.75,
     s=45,
 )
-plt.xlabel("Score de engajamento")
+plt.xlabel("Engagement score")
 plt.ylabel("P(concentrating)")
-plt.title("Score vs P(concentrating) — colorido por classe verdadeira")
+plt.title("Score vs P(concentrating) — colored by true class")
 plt.tight_layout()
 plt.savefig(FIGURES / "engagement_scatter.png", dpi=130)
 plt.close()
@@ -91,10 +91,10 @@ plt.figure(figsize=(8, 5))
 for name in class_order:
     subset = plot_df.loc[plot_df["true_class"] == name, "engagement_score"]
     plt.hist(subset, bins=20, alpha=0.45, label=name, color=palette[name])
-plt.xlabel("Score de engajamento")
-plt.ylabel("Frequência")
-plt.title("Distribuição do score por classe")
-plt.legend(title="Classe")
+plt.xlabel("Engagement score")
+plt.ylabel("Frequency")
+plt.title("Score distribution by class")
+plt.legend(title="Class")
 plt.tight_layout()
 plt.savefig(FIGURES / "engagement_histogram.png", dpi=130)
 plt.close()

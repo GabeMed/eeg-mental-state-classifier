@@ -1,113 +1,113 @@
-# TASKS.md — Execução atômica
+# TASKS.md — Atomic execution
 
-Legenda:
-- **[CLAUDE]** — fazer comigo. Tem decisão de DS, não é boilerplate. Momento de entender.
-- **[CURSOR]** — delegar para Cursor/LLM mais barato. É tradução de instrução → código.
-- **[T]** — verificação obrigatória antes de marcar como done.
+Legend:
+- **[CLAUDE]** — do with me. Involves a DS decision, not boilerplate. A moment to understand.
+- **[CURSOR]** — delegate to Cursor/a cheaper LLM. It is translating instructions → code.
+- **[T]** — mandatory check before marking as done.
 
-Ordem por fase. Cada fase tem um teto de tempo (PLANO §3).
-
----
-
-## Fase 0 — Setup (20 min)
-
-- [ ] **T1** [CLAUDE, 10min] Baixar dataset do Kaggle, inspecionar: shape, nomes das 988 colunas, existência de IDs de sujeito, presença/ausência de nomes de banda nas colunas.
-  - **[T]** `df.shape == (2479, 989)` e imprimimos 20 primeiros nomes de coluna.
-  - **Decisão que esta task resolve:** D2 (BATR vs fallback), D4 (LOSO vs não).
-- [ ] **T2** [CURSOR, 5min] `git init`, criar estrutura de pastas (§D5), `.gitignore` para `data/` e `artifacts/`.
-- [ ] **T3** [CURSOR, 5min] `requirements.txt` com: pandas, numpy, scikit-learn, xgboost, matplotlib, seaborn, streamlit, jupyter.
+Ordered by phase. Each phase has a time ceiling (PLAN §3).
 
 ---
 
-## Fase 1 — EDA (45 min)
+## Phase 0 — Setup (20 min)
 
-- [ ] **T4** [CLAUDE, 15min] Notebook `01_eda.ipynb`: estatísticas globais, confirmação dos 4.6% de duplicatas, distribuição de classes, detecção de outliers (os 530656 do PLANO).
-  - **[T]** cell final imprime "OK: dataset tem 2479 linhas, 3 classes balanceadas, N duplicatas detectadas, M outliers >|1e4|."
-  - **Momento de ensino:** por que olhar outliers ANTES de escolher scaler.
-- [ ] **T5** [CURSOR, 15min] Plots: barplot de classes, heatmap de correlação (top-50 features por variância), boxplots de 6 features por classe.
-  - **[T]** 5 figuras geradas, todas com título e legenda.
-- [ ] **T6** [CLAUDE, 15min] ANOVA 1-way por feature para ranquear "features discriminativas" entre estados. Imprimir top-20.
-  - **[T]** DataFrame ordenado por F-stat decrescente.
-  - **Momento de ensino:** F-stat como proxy rápido de "esta feature carrega sinal de classe".
+- [ ] **T1** [CLAUDE, 10min] Download the Kaggle dataset and inspect: shape, the names of the 988 columns, whether subject IDs exist, presence/absence of band names in the columns.
+  - **[T]** `df.shape == (2479, 989)` and we print the first 20 column names.
+  - **Decision this task resolves:** D2 (BATR vs fallback), D4 (LOSO or not).
+- [ ] **T2** [CURSOR, 5min] `git init`, create the folder structure (§D5), `.gitignore` for `data/` and `artifacts/`.
+- [ ] **T3** [CURSOR, 5min] `requirements.txt` with: pandas, numpy, scikit-learn, xgboost, matplotlib, seaborn, streamlit, jupyter.
 
 ---
 
-## Fase 2 — Pipeline de features (30 min)
+## Phase 1 — EDA (45 min)
 
-- [ ] **T7** [CLAUDE, 15min] `src/data.py`: `load_raw()`, `deduplicate()`, `stratified_split()` com `random_state=42`. **De-dup ANTES do split.**
+- [ ] **T4** [CLAUDE, 15min] Notebook `01_eda.ipynb`: global statistics, confirmation of the 4.6% duplicates, class distribution, outlier detection (the 530656 from the PLAN).
+  - **[T]** final cell prints "OK: dataset has 2479 rows, 3 balanced classes, N duplicates detected, M outliers >|1e4|."
+  - **Teaching moment:** why look at outliers BEFORE choosing a scaler.
+- [ ] **T5** [CURSOR, 15min] Plots: class barplot, correlation heatmap (top-50 features by variance), boxplots of 6 features by class.
+  - **[T]** 5 figures generated, all with a title and legend.
+- [ ] **T6** [CLAUDE, 15min] 1-way ANOVA per feature to rank "discriminative features" between states. Print the top-20.
+  - **[T]** DataFrame sorted by F-stat, descending.
+  - **Teaching moment:** F-stat as a quick proxy for "this feature carries class signal".
+
+---
+
+## Phase 2 — Feature pipeline (30 min)
+
+- [ ] **T7** [CLAUDE, 15min] `src/data.py`: `load_raw()`, `deduplicate()`, `stratified_split()` with `random_state=42`. **De-dup BEFORE the split.**
   - **[T]** `len(train) + len(test) == len(df_deduped)`, `train.Label.value_counts(normalize=True)` ≈ stratified.
-  - **Momento de ensino:** por que de-dup antes do split evita vazamento sutil.
-- [ ] **T8** [CLAUDE, 10min] `src/features.py`: `RobustScaler` fit no treino, transform no teste. Salvar em `artifacts/scaler.pkl`.
-  - **[T]** `train_scaled.median(axis=0)` ≈ 0, `test_scaled` usa estatísticas do treino.
-  - **Momento de ensino:** por que `fit` só no treino (data leakage 101).
-- [ ] **T9** [CURSOR, 5min] Salvar `artifacts/columns.json` com a lista ordenada das 988 colunas (o app precisa disso para validar upload).
+  - **Teaching moment:** why de-dup before the split avoids subtle leakage.
+- [ ] **T8** [CLAUDE, 10min] `src/features.py`: `RobustScaler` fit on train, transform on test. Save to `artifacts/scaler.pkl`.
+  - **[T]** `train_scaled.median(axis=0)` ≈ 0, `test_scaled` uses training statistics.
+  - **Teaching moment:** why `fit` only on train (data leakage 101).
+- [ ] **T9** [CURSOR, 5min] Save `artifacts/columns.json` with the ordered list of the 988 columns (the app needs it to validate uploads).
 
 ---
 
-## Fase 3 — Modelos (45 min)
+## Phase 3 — Models (45 min)
 
-- [ ] **T10** [CLAUDE, 15min] `src/models.py::train_logreg(X_train, y_train)`: LogReg L2, `max_iter=2000`, CV estratificada 5-fold, reportar macro-F1 mean±std.
-  - **[T]** CV score > 0.33 (chance). Modelo salvo em `artifacts/logreg.pkl`.
-  - **Momento de ensino:** por que LogReg + L2 é o baseline honesto.
-- [ ] **T11** [CLAUDE, 15min] `src/models.py::train_xgb(X_train, y_train)`: XGBoost default + `eval_metric='mlogloss'`, mesma CV, mesmo reporting.
-  - **[T]** CV score > LogReg, salvo em `artifacts/xgb.pkl`.
-  - **Momento de ensino:** o gap LogReg→XGB mede o quanto do problema é não-linear.
-- [ ] **T12** [CLAUDE, 15min] Avaliação final no conjunto de teste trancado. Matrizes de confusão + classification_report para ambos.
-  - **[T]** 2 matrizes de confusão renderizadas + 2 relatórios impressos.
-  - **Momento de ensino:** por que olhar a matriz de confusão, não só accuracy.
-
----
-
-## Fase 4 — Score de engajamento (30 min)
-
-- [ ] **T13** [CLAUDE, 20min] `src/engagement.py`: implementar BATR se D2 permitir, senão fallback. Normalizar para 0–100.
-  - **[T]** score.min() ≥ 0, score.max() ≤ 100, sem NaN.
-  - **Momento de ensino:** o que significa "coerente" em um score sem ground-truth direto.
-- [ ] **T14** [CURSOR, 10min] Validação: boxplot do score por classe + scatter `score vs P(concentrating)` + correlação de Pearson.
-  - **[T]** 2 figuras + 1 número de correlação impresso.
+- [ ] **T10** [CLAUDE, 15min] `src/models.py::train_logreg(X_train, y_train)`: LogReg L2, `max_iter=2000`, stratified 5-fold CV, report macro-F1 mean±std.
+  - **[T]** CV score > 0.33 (chance). Model saved to `artifacts/logreg.pkl`.
+  - **Teaching moment:** why LogReg + L2 is the honest baseline.
+- [ ] **T11** [CLAUDE, 15min] `src/models.py::train_xgb(X_train, y_train)`: default XGBoost + `eval_metric='mlogloss'`, same CV, same reporting.
+  - **[T]** CV score > LogReg, saved to `artifacts/xgb.pkl`.
+  - **Teaching moment:** the LogReg→XGB gap measures how much of the problem is non-linear.
+- [ ] **T12** [CLAUDE, 15min] Final evaluation on the locked test set. Confusion matrices + classification_report for both.
+  - **[T]** 2 confusion matrices rendered + 2 reports printed.
+  - **Teaching moment:** why look at the confusion matrix, not just accuracy.
 
 ---
 
-## Fase 5 — Streamlit (45 min)
+## Phase 4 — Engagement score (30 min)
 
-- [ ] **T15** [CURSOR, 15min] `app/streamlit_app.py`: layout com `st.file_uploader`, leitura do CSV, validação de schema contra `artifacts/columns.json`.
-  - **[T]** app roda local, rejeita CSV com colunas erradas com mensagem clara.
-- [ ] **T16** [CLAUDE, 20min] Integração: carregar scaler + modelo, aplicar, computar score de engajamento, renderizar resultado.
-  - **[T]** upload do `sample_input.csv` mostra classe predita + score para cada linha.
-  - **Momento de ensino:** por que o app precisa carregar o MESMO scaler do treino.
-- [ ] **T17** [CURSOR, 10min] Polimento: título, descrição explicando o schema esperado, botão para baixar `sample_input.csv`.
-
----
-
-## Fase 6 — Relatório + README (25 min)
-
-- [ ] **T18** [CURSOR, 10min] `README.md`: como instalar, como rodar EDA, como rodar app, como rodar testes.
-  - **[T]** seguir o README do zero em terminal limpo funciona.
-- [ ] **T19** [CLAUDE, 15min] `REPORT.md` com seções:
-  1. O que funcionou
-  2. O que não funcionou
-  3. O que eu faria diferente
-  4. **Plano vs. Entrega** (tabela de 2 colunas)
-  - **[T]** cada seção tem ao menos 3 bullets específicos, nenhum genérico.
-  - **Momento de ensino:** a diferença entre um relatório honesto e um relatório defensivo.
+- [ ] **T13** [CLAUDE, 20min] `src/engagement.py`: implement BATR if D2 allows it, otherwise the fallback. Normalize to 0–100.
+  - **[T]** score.min() ≥ 0, score.max() ≤ 100, no NaN.
+  - **Teaching moment:** what "coherent" means for a score with no direct ground truth.
+- [ ] **T14** [CURSOR, 10min] Validation: boxplot of the score by class + scatter `score vs P(concentrating)` + Pearson correlation.
+  - **[T]** 2 figures + 1 correlation number printed.
 
 ---
 
-## Fase 7 — Buffer (20 min)
+## Phase 5 — Streamlit (45 min)
 
-- [ ] **T20** [CLAUDE, 20min] Git: commit por fase (retroativo tudo bem), push, teste final do app em sessão limpa.
+- [ ] **T15** [CURSOR, 15min] `app/streamlit_app.py`: layout with `st.file_uploader`, CSV reading, schema validation against `artifacts/columns.json`.
+  - **[T]** app runs locally and rejects a CSV with wrong columns with a clear message.
+- [ ] **T16** [CLAUDE, 20min] Integration: load scaler + model, apply them, compute the engagement score, render the result.
+  - **[T]** uploading `sample_input.csv` shows the predicted class + score for each row.
+  - **Teaching moment:** why the app must load the SAME scaler used in training.
+- [ ] **T17** [CURSOR, 10min] Polish: title, description explaining the expected schema, button to download `sample_input.csv`.
 
 ---
 
-## Gates de ensino (onde pausar e conversar)
+## Phase 6 — Report + README (25 min)
 
-Momentos em que vou EXPLICAR antes de fazer — não pulá-los:
+- [ ] **T18** [CURSOR, 10min] `README.md`: how to install, how to run the EDA, how to run the app, how to run the tests.
+  - **[T]** following the README from scratch in a clean terminal works.
+- [ ] **T19** [CLAUDE, 15min] `REPORT.md` with sections:
+  1. What worked
+  2. What did not work
+  3. What I would do differently
+  4. **Plan vs. Outcome** (2-column table)
+  - **[T]** each section has at least 3 specific bullets, none generic.
+  - **Teaching moment:** the difference between an honest report and a defensive one.
 
-1. **T1 output** — o que os nomes de coluna nos dizem sobre as escolhas D2 e D4.
-2. **T7** — por que de-dup antes do split (vazamento sutil mesmo sem labels).
-3. **T8** — fit só no treino (o "hello world" do data leakage).
-4. **T11** — interpretando o gap LogReg vs XGB.
-5. **T13** — validade de score sem ground-truth direto.
-6. **T19** — framing honesto do relatório.
+---
 
-Tudo fora disso é execução. Delego para Cursor o que puder ser expresso como "escreva uma função que faz X, Y, Z".
+## Phase 7 — Buffer (20 min)
+
+- [ ] **T20** [CLAUDE, 20min] Git: one commit per phase (retroactive is fine), push, final app test in a clean session.
+
+---
+
+## Teaching gates (where to pause and discuss)
+
+Moments where I will EXPLAIN before doing — do not skip them:
+
+1. **T1 output** — what the column names tell us about choices D2 and D4.
+2. **T7** — why de-dup before the split (subtle leakage even without labels).
+3. **T8** — fit only on train (the "hello world" of data leakage).
+4. **T11** — interpreting the LogReg vs XGB gap.
+5. **T13** — validity of a score with no direct ground truth.
+6. **T19** — honest framing of the report.
+
+Everything else is execution. I delegate to Cursor whatever can be expressed as "write a function that does X, Y, Z".
