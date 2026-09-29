@@ -1,20 +1,21 @@
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import warnings; warnings.filterwarnings("ignore")
+import warnings
+
 import joblib
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
-from pathlib import Path
 
 from src.data import load_dedup_split
 from src.features import apply_scaler, load_scaler
 from src.engagement import engagement_score
+from src.paths import ARTIFACTS, FIGURES
 
-ROOT = Path(__file__).resolve().parents[1]
-FIGURES = ROOT / "notebooks" / "figures"
+warnings.filterwarnings("ignore")
+
 FIGURES.mkdir(parents=True, exist_ok=True)
 
 CLASS_NAMES = {0.0: "relaxed", 1.0: "neutral", 2.0: "concentrating"}
@@ -22,7 +23,7 @@ CLASS_NAMES = {0.0: "relaxed", 1.0: "neutral", 2.0: "concentrating"}
 Xtr, Xte, ytr, yte, _ = load_dedup_split()
 scaler = load_scaler()
 Xte_s = apply_scaler(scaler, Xte)
-lr = joblib.load(ROOT / "artifacts" / "logreg.pkl")
+lr = joblib.load(ARTIFACTS / "logreg.pkl")
 
 scores = engagement_score(lr, Xte_s)
 probs = lr.predict_proba(Xte_s)

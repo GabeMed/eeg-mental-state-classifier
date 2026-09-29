@@ -12,7 +12,8 @@ from typing import Tuple
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "mental-state.csv"
+from .paths import DATA_PATH
+
 LABEL_COL = "Label"
 RANDOM_STATE = 42
 TEST_SIZE = 0.20

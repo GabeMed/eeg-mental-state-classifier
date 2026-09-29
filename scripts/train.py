@@ -19,7 +19,6 @@ import json
 import os
 import sys
 import warnings
-from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -32,10 +31,9 @@ from src.models import (
     train_xgboost,
     xgb_estimator,
 )
+from src.paths import ARTIFACTS
 from src.report_log import log_finding, log_metric
 
-
-ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
 
 
 def main() -> None:
@@ -73,11 +71,11 @@ def main() -> None:
     )
 
     # Summary.
-    print(f"\n=== training complete ===")
+    print("\n=== training complete ===")
     print(f"LogReg  honest CV macro-F1 : {lr_cv.mean():.4f} ± {lr_cv.std():.4f}")
     print(f"XGB     honest CV macro-F1 : {xgb_cv.mean():.4f} ± {xgb_cv.std():.4f}")
-    print(f"\nartifacts/ updated: scaler.pkl, logreg.pkl, xgb.pkl, columns.json")
-    print(f"next: PYTHONPATH=. python scripts/evaluate.py")
+    print("\nartifacts/ updated: scaler.pkl, logreg.pkl, xgb.pkl, columns.json")
+    print("next: PYTHONPATH=. python scripts/evaluate.py")
 
 
 if __name__ == "__main__":
