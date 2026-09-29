@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from src.data import load_dedup_split
+from src.paths import ARTIFACTS
 
 
-ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
 COLUMNS_PATH = ARTIFACTS / "columns.json"
 
 

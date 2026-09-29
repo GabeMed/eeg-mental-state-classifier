@@ -1,0 +1,22 @@
+# Tool configuration only. Runtime dependencies are pinned in requirements.txt
+# (direct) and requirements.lock (full resolution for Python 3.12).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["slow: runs the full train/evaluate pipeline on synthetic data (~1 min)"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning", "ignore::SyntaxWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts and the app put the repo root on sys.path before importing src/.
+"scripts/*.py" = ["E402"]
+"app/*.py" = ["E402"]

@@ -12,12 +12,12 @@ Use render_log.py to produce the REPORT.md storyline section.
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
-LOG_PATH = Path(__file__).resolve().parents[1] / "artifacts" / "run_log.jsonl"
+from .paths import ARTIFACTS
+
+LOG_PATH = ARTIFACTS / "run_log.jsonl"
 
 
 def _append(entry: dict) -> None:

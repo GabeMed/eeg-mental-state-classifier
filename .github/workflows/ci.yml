@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements.lock
+
+      - name: Install pinned environment (Python 3.12)
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python -r requirements.lock
+
+      - name: Lint
+        run: make lint
+
+      - name: Tests (synthetic data, no Kaggle download)
+        env:
+          MPLBACKEND: Agg
+        run: .venv/bin/python -m pytest -v

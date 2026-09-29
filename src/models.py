@@ -19,7 +19,6 @@ Same StratifiedKFold(5) and macro-F1 for both models.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Tuple
 
 import joblib
@@ -31,7 +30,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, RobustScaler
 from xgboost import XGBClassifier
 
-ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
+from .paths import ARTIFACTS
+
 RANDOM_STATE = 42
 CV_FOLDS = 5
 CLIP_BOUND = 10.0
