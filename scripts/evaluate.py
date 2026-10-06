@@ -27,12 +27,10 @@ from sklearn.metrics import (
 
 from src.data import load_dedup_split
 from src.features import apply_scaler, load_scaler
+from src.paths import ARTIFACTS, FIGURES
 from src.report_log import log_finding, log_metric
 
 
-ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS = ROOT / "artifacts"
-FIGURES = ROOT / "notebooks" / "figures"
 CLASS_NAMES = {0.0: "relaxed", 1.0: "neutral", 2.0: "concentrating"}
 
 
@@ -100,7 +98,7 @@ def main():
 
     results = {}
     labels_order = sorted(yte.unique())
-    label_names = [CLASS_NAMES[l] for l in labels_order]
+    label_names = [CLASS_NAMES[lbl] for lbl in labels_order]
 
     for model_name in ["logreg", "xgb"]:
         model = joblib.load(ARTIFACTS / f"{model_name}.pkl")
@@ -167,8 +165,8 @@ def main():
         "Held-out test set — final honest numbers",
         f"LogReg macro-F1 = {results['logreg']['test_macro_f1']}, "
         f"XGBoost macro-F1 = {results['xgb']['test_macro_f1']}. "
-        f"Gap on test = {gap:+.4f} (CV gap was +0.0187 — consistent, no suspicious train/test discrepancy). "
-        f"473 rows, stratified split, scaler and models never saw this data."
+        f"Gap on test = {gap:+.4f}. "
+        f"{len(yte)} rows, stratified split, scaler and models never saw this data."
     )
     top_family = family_sum.index[0]
     log_finding(

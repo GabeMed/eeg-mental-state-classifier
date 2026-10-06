@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
 
-ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
+from .paths import ARTIFACTS
+
 SCALER_PATH = ARTIFACTS / "scaler.pkl"
 CLIP_BOUND = 10.0
 
